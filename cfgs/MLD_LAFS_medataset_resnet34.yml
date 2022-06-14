@@ -1,0 +1,102 @@
+# Model settings
+val_every: 1
+model_checkpoint_interval: 1
+seed: 0
+model:
+  name: MLD_LAFS
+  parameters:
+    backbone: resnet34
+    S: &S 72
+    topk_anchors: 1000
+    anchors_freq_path: 'data/medataset_anchors_freq.pt'
+    img_h: &img_h 360
+    img_w: &img_w 640
+batch_size: 32
+epochs: 500
+loss_parameters: {}
+train_parameters:
+  conf_threshold: 
+  nms_thres: 15.
+  nms_topk: 3000
+test_parameters:
+  conf_threshold: 0.2
+  nms_thres: 45.
+  nms_topk: &max_lanes 8
+optimizer:
+  name: Adam
+  parameters:
+    lr: 0.0001
+lr_scheduler:
+  name: CosineAnnealingLR
+  parameters:
+    T_max: 394500 # 100 * 454 iterations
+
+# Dataset settings
+datasets:
+  train: &train
+    type: LaneDataset
+    parameters:
+      S: *S
+      dataset: tusimple
+      split: train+val
+      img_size: [*img_h, *img_w]
+      max_lanes: *max_lanes
+      normalize: false
+      aug_chance: 1.0
+      augmentations:
+        - name: Affine
+          parameters:
+            translate_px:
+              x: !!python/tuple [-25, 25]
+              y: !!python/tuple [-10, 10]
+            rotate: !!python/tuple [-6, 6]
+            scale: !!python/tuple [0.85, 1.15]
+        - name: HorizontalFlip
+          parameters:
+            p: 0.5
+
+      root: "../../MeDataset"
+      # root: "datasets/tusimple"
+
+  test:
+    type: LaneDataset
+    parameters:
+      S: *S
+      dataset: tusimple
+      split: test
+      img_size: [*img_h, *img_w]
+      max_lanes: *max_lanes
+      normalize: false
+      aug_chance: 0
+      augmentations:
+      root: "../../MeDataset"
+      # root: "datasets/tusimple"
+  # test:
+  #   type: LaneDataset
+  #   parameters:
+  #     S: *S
+  #     # ---------- modified lines START here  ----------
+  #     dataset: nolabel_dataset
+  #     img_h:  720 # Set your test images height here
+  #     img_w:  1280 # Set your test images width here
+  #     root: "datasets/tusimple/clips" # Path to the root directory of your images
+  #     img_ext: ".jpg" # The loader will load every image with extension `img_ext` inside `root`
+  #     max_lanes: *max_lanes # You should use the same number that the model was trained with (i.e., leave it as it is)
+  #     normalize: false
+  #     aug_chance: 0
+  #     augmentations:
+  #     # ---------- modified lines END here  ----------
+
+  val:
+    type: LaneDataset
+    parameters:
+      S: *S
+      dataset: tusimple
+      split: val
+      img_size: [*img_h, *img_w]
+      max_lanes: *max_lanes
+      normalize: false
+      aug_chance: 0
+      augmentations:
+      root: "../../MeDataset"
+      # root: "datasets/tusimple"
